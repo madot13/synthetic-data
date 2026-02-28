@@ -1,0 +1,7 @@
+celery
+redis
+pandas
+faker
+requests
+sqlalchemy
+psycopg2-binary

@@ -1,0 +1,75 @@
+services:
+  # ---------------- Postgres ----------------
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: synthetic_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  # ---------------- Redis ----------------
+  redis:
+    image: redis:7
+    networks:
+      - app-network
+
+  # ---------------- Backend / FastAPI ----------------
+  api:
+    build: ./backend
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./backend:/app
+      - ./storage:/app/storage
+    ports:
+      - "8000:8000"
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - DATABASE_URL=postgresql://user:password@db:5432/synthetic_db
+      - PYTHONPATH=/app
+    depends_on:
+      - db
+      - redis
+    networks:
+      - app-network
+
+  # ---------------- Celery Worker ----------------
+  worker:
+    build:
+      context: .
+      dockerfile: worker/Dockerfile
+    command: celery -A tasks.celery_app worker --loglevel=info
+    volumes:
+      - ./storage:/app/storage
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - PYTHONPATH=/app
+    depends_on:
+      - redis
+    networks:
+      - app-network
+
+  # ---------------- Frontend / Next.js ----------------
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - api
+    networks:
+      - app-network
+
+volumes:
+  postgres_data:
+
+
+networks:
+  app-network:
+    driver: bridge

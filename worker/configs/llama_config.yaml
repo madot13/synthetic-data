@@ -1,0 +1,4 @@
+# worker/configs/llama_config.yaml
+model: "llama3.1"
+api_key: "ollama"
+base_url: "http://host.docker.internal:11434/v1"
