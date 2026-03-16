@@ -90,7 +90,7 @@ ollama run llama3:8b "Hello, can you generate some sample data?"
 ### 1. Клонирование и настройка
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/madot13/synthetic-data.git
 cd synthetic-data-generator
 ```
 
